@@ -9,11 +9,11 @@ system.
 
 2. If you use debian you will need the following packages:
 
-	# sudo aptitude install mtd-tools mtd-utils
+	host# sudo aptitude install mtd-tools mtd-utils
 
 3. Use mkfs.jffs2 to create jffs2 image
 
-	# mkfs.jffs2 -lnp -e 0x20000 -s 2048 -d ./rootfs -o image.jffs2
+	host# mkfs.jffs2 -lnp -e 0x20000 -s 2048 -d ./rootfs -o image.jffs2
 
 options stand for:
   -r, -d, --root=DIR
@@ -47,3 +47,4 @@ options stand for:
 	size of a data node.
 
 
+/* vim: set filetype=esys : */
