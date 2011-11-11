@@ -11,7 +11,7 @@
 ==== Build commands
 
 1. Build android for the new omap3evm board
-	host# make TARGET_PRODUCT=[beagleboard|omap3evm|...] -j8 rowboat OMAPES=[5.x|3.x|2.x]
+	host# make TARGET_PRODUCT=[beagleboard|omap3evm|...] OMAPES=[5.x|3.x|2.x] -j8 rowboat
 
 2. How to clean a part of the whole project:
 	a. Get the value of LOCAL_MODULE in Android.mk of subproject under consideration
@@ -37,7 +37,12 @@ short form (no ambiguity in network device and network settings):
 root=/dev/nfs rw init=/init rootwait ip=192.167.10.2 nfsroot=192.167.10.1:/path/to/nfsroot
 
 long form with all the details:
-FIXME
+	root=/dev/nfs rw rootwait \
+	nfsroot=192.167.10.1:/home/matsi/embedded/nfsroot \
+	ip=192.167.10.2:192.167.10.1::255.255.255.0::eth0:off
+where
+ip=<client-ip>:<server-ip>:<gw-ip>:<netmask>:<hostname>:<device>:<autoconf>
+
 
 * root file system on jffs2 (example for rootfs on mtd4)
 
@@ -58,7 +63,7 @@ omap_vout.vid1_static_vrfb_alloc=y omapdss.def_disp=lcd omapfb.mode=lcd:800x480M
 example:
 	# adb forward tcp:5901 tcp:5901
 
-* vnc: very handy of no monitor or lcd available
+* vnc: very handy if monitor or lcd is not available
 on device:
 	dev# /path/to/androidvncserver
 
@@ -96,10 +101,11 @@ simple sequence (example with mediaserver and beagleboard):
 	GDB> target remote :5039
 
 
-NB: android development scripts can do a lot of work for you
+NOTE: android development scripts can do a lot of work for you
 
 	host# source build/envsetup.sh
-	host# gdbclient
+	host# lunch beagleboard-eng
+	host# gdbclient mediaserver :5039 mediaserver
 
 
 

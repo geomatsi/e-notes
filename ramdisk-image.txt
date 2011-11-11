@@ -1,6 +1,6 @@
-Ramdisk tutorial
+==== Ramdisk tutorial
 
-==== HOW-TO create ramdisks with rootfs and boot them using u-boot
+* HOW-TO create ramdisks with rootfs and boot them using u-boot
 
 1. Create file to keep ramdisk
 	host# dd if=/dev/zero of=./image.bin bs=1M count=15
@@ -29,7 +29,7 @@ Ramdisk tutorial
 	host# mkimage -A arm -O linux -T ramdisk -a 0x80a00000 -n "armv7 ramdisk" -d image.bin.gz  uRamdisk.small
 
 
-===== HOW-TO use ramdisks
+* HOW-TO use ramdisks
 
 1. Download kernel and ramdisk to memory
    From u-boot load kernel to $kernel_addr and load ramdisk to $ramdisk_addr. It
@@ -38,13 +38,13 @@ Ramdisk tutorial
 
 2. Set proper kernel command line
    Make kernel aware of this root filesystem:
-   	# setenv bootargs "console=ttyS2,115200 rw root=/dev/ram0 ramdisk_size=40000"
+   	UBoot> setenv bootargs "console=ttyS2,115200 rw root=/dev/ram0 ramdisk_size=40000"
 
 3. Boot kernel
-	# bootm $kernel_addr $ramdisk_addr
+	UBoot> bootm $kernel_addr $ramdisk_addr
 
 4. Example
-   	# bootm 0x80000000 0x80a00000
+   	UBoot> bootm 0x80000000 0x80a00000
 
 
 /* vim: set filetype=esys : */

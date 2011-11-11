@@ -1,17 +1,16 @@
-== How to create jffs2 image from directory structure.
+==== How to create jffs2 image from directory structure.
 
 Here we provide guidelines which are suitable for beagleboard (endianness,
 block size and other settings), but it can be easily tweaked for any other
 system.
 
-1. Suppose that we have prepared rootfs directory structure
-   located in rootfs directory.
+* Suppose that we have prepared rootfs directory structure located in rootfs directory.
 
-2. If you use debian you will need the following packages:
+* If you use debian you will need the following packages:
 
 	host# sudo aptitude install mtd-tools mtd-utils
 
-3. Use mkfs.jffs2 to create jffs2 image
+* Use mkfs.jffs2 to create jffs2 image
 
 	host# mkfs.jffs2 -lnp -e 0x20000 -s 2048 -d ./rootfs -o image.jffs2
 

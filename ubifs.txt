@@ -1,4 +1,4 @@
-UBIFS BASIC HOWTO
+==== UBIFS BASIC HOWTO
 
 1. Configure kernel options
 
@@ -14,13 +14,13 @@ CONFIG_UBIFS_FS_ZLIB=y
 2. Mount ubifs partition in Linux
 
 Attach MTD device N (/dev/mtdN) to UBI subsystem
-	# ubiattach /dev/ubi_ctrl -m N
+	dev# ubiattach /dev/ubi_ctrl -m N
 
 Get info about UBI volumes
-	# ubinfo -a
+	dev# ubinfo -a
 
 Get info about specific volume
-	# ubinfo -n 0 -d 0
+	dev# ubinfo -n 0 -d 0
 	Volume ID:   0 (on ubi0)
 	Type:        dynamic
 	Alignment:   1
@@ -30,12 +30,13 @@ Get info about specific volume
 	Character device major/minor: 249:1
 
 Mount UBI volume rootfs
-	# mount -t ubifs ubi0:rootfs /media/ubi/
+	dev# mount -t ubifs ubi0:rootfs /media/ubi/
 
 3. Create ubifs image with one volume
-Directory 'data' contains files for ubifs volume
+Suppose directory 'data' contains files for ubifs volume and ubinize.cfg has
+the following contents:
 
-	# cat
+	host# cat ubinize.cfg
 	[ubifs]
 	mode=ubi
 	image=ubifs.img
@@ -45,8 +46,8 @@ Directory 'data' contains files for ubifs volume
 	vol_name=rootfs
 	vol_flags=autoresize
 
-	# mkfs.ubifs -r data -m 2048 -e 129024 -c 2047 -o ubifs.img
-	# ubinize -o ubi.img -m 2048 -p 128KiB -s 512 ubinize.cfg
+	host# mkfs.ubifs -r data -m 2048 -e 129024 -c 2047 -o ubifs.img
+	host# ubinize -o ubi.img -m 2048 -p 128KiB -s 512 ubinize.cfg
 
 4. UBIFS in u-boot
 
@@ -54,17 +55,17 @@ Build u-boot with the following options:
 
 	#define CONFIG_SYS_USE_UBI
 	#define CONFIG_MTD_PARTITIONS
-	#define        CONFIG_CMD_UBI
-	#define        CONFIG_CMD_UBIFS
-	#define        CONFIG_RBTREE
+	#define CONFIG_CMD_UBI
+	#define CONFIG_CMD_UBIFS
+	#define CONFIG_RBTREE
 	#define CONFIG_LZO
 
 Besides, CONFIG_SYS_MALLOC_LEN size should be more than 512K.
 
 Suppose we have ubi image with one volume 'rootfs' in mtd4 partition. Then we
 have to do the following commands in order to get uImage from that partition:
-U-Boot> mtdparts default
-U-Boot> mtdparts
+UBoot> mtdparts default
+UBoot> mtdparts
 	device nand0 <nand>, # parts = 5
 	#: name                size            offset          mask_flags
 	0: x-loader            0x00080000      0x00000000      0
@@ -80,9 +81,11 @@ U-Boot> mtdparts
 	mtdparts:
 		mtdparts=nand:512k(x-loader),1920k(u-boot),128k(u-boot-env),4m(kernel),-(fs)
 
-U-Boot> ubi part nand0,4
-U-Boot> ubi info
-U-Boot> ubifsmount rootfs
-U-Boot> ubifsls
+UBoot> ubi part nand0,4
+UBoot> ubi info
+UBoot> ubifsmount rootfs
+UBoot> ubifsls
 	2746472  Fri Sep 09 15:01:45 2011  uImage
-U-Boot> ubifsload 0x80000000 uImage
+UBoot> ubifsload 0x80000000 uImage
+
+/* vim: set filetype=esys : */
