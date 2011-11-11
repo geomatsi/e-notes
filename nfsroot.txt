@@ -1,0 +1,16 @@
+HOW TO USE NFS AS ROOT FILESYSTEM
+
+1. Kernel configuration options
+
+File systems -->
+	Network File Systems -->
+		NFS client support
+
+File systems -->
+	Network File Systems -->
+		Root file system on NFS
+
+2. Boot arguments
+The following rootfs parameters should be available in u-boot bootargs variable:
+	root=/dev/nfs rw init=/init rootwait ip=192.167.10.2 nfsroot=192.167.10.1:/path/to/nfsroot
+Note, that IP address and NFS path are just examples, you have to put your own.

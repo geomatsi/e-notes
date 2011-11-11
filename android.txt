@@ -1,0 +1,107 @@
+==== Managing repo
+
+1. init repo
+
+2. modify fetch addr:
+
+3. sync repo
+	host# repo sync
+
+
+==== Build commands
+
+1. Build android for the new omap3evm board
+	host# make TARGET_PRODUCT=[beagleboard|omap3evm|...] -j8 rowboat OMAPES=[5.x|3.x|2.x]
+
+2. How to clean a part of the whole project:
+	a. Get the value of LOCAL_MODULE in Android.mk of subproject under consideration
+	b. host# make TARGET_PRODUCT=omap3evm clean-<LOCAL_MODULE value>
+
+3. Create rootfs archive
+
+	host# cd out/target/product/beagleboard/
+	host# mkarfs rootfs.tar.bz2
+
+
+==== Booting Android
+
+U-Boot: various bootargs settings (kernel command line)
+
+= android console settings
+
+console=ttyS0,115200n8 androidboot.console=ttyS0 console=tty0
+
+* root file system over nfs
+
+short form (no ambiguity in network device and network settings):
+root=/dev/nfs rw init=/init rootwait ip=192.167.10.2 nfsroot=192.167.10.1:/path/to/nfsroot
+
+long form with all the details:
+FIXME
+
+* root file system on jffs2 (example for rootfs on mtd4)
+
+root=/dev/mtdblock4 rw rootfstype=jffs2
+
+* root file system on jffs2 (example for rootfs on mtd4 and ubi volume name 'rootfs')
+
+ubi.mtd=4 root=ubi0:rootfs rw rootfstype=ubifs
+
+* video settings (example for LCD):
+omap_vout.vid1_static_vrfb_alloc=y omapdss.def_disp=lcd omapfb.mode=lcd:800x480MR-16 vram=8M omapfb.vram=0:8M
+
+
+==== Debugging Android
+
+* network over adb: very handy if no other network connectivity like ethernet or wifi
+	host# adb forward <local> <remote>
+example:
+	# adb forward tcp:5901 tcp:5901
+
+* vnc: very handy of no monitor or lcd available
+on device:
+	dev# /path/to/androidvncserver
+
+on development host:
+	host# adb forward tcp:5901 tcp:5901
+	host# vncviewer :5901
+
+NOTES:
+ - need a special version of vnc server
+ - might need to use a different port[s]
+
+* Android and GDB
+simple sequence (example with mediaserver and beagleboard):
+
+- on the device, launch a new command or attach to an existing process:
+
+	dev# gdbserver :5039 /system/bin/mediaserver
+	or
+	dev# gdbserver :5039 --attach pid
+
+- on your workstation, forward port 5039 to the device with adb:
+
+	host# adb forward tcp:5039 tcp:5039
+
+- start a special version of gdb that lives in the "prebuilt" area of the source tree:
+
+	host# prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-gdb out/target/product/beagleboard/symbols/system/bin/mediaserver
+
+- tell gdb where to find shared libraries
+
+	GDB> set solib-absolute-prefix /absolute/source/path/out/target/product/beagleboard/symbols
+	GDB> set solib-search-path /absolute/source/path/out/target/product/beagleboard/symbols/system/lib
+
+- connect to the device by issuing the gdb command:
+	GDB> target remote :5039
+
+
+NB: android development scripts can do a lot of work for you
+
+	host# source build/envsetup.sh
+	host# gdbclient
+
+
+
+
+/* vim: set filetype=esys : */

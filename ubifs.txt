@@ -1,0 +1,88 @@
+UBIFS BASIC HOWTO
+
+1. Configure kernel options
+
+CONFIG_MTD_UBI=y
+CONFIG_MTD_UBI_WL_THRESHOLD=4096
+CONFIG_MTD_UBI_BEB_RESERVE=1
+
+CONFIG_UBIFS_FS=y
+CONFIG_UBIFS_FS_ADVANCED_COMPR=y
+CONFIG_UBIFS_FS_LZO=y
+CONFIG_UBIFS_FS_ZLIB=y
+
+2. Mount ubifs partition in Linux
+
+Attach MTD device N (/dev/mtdN) to UBI subsystem
+	# ubiattach /dev/ubi_ctrl -m N
+
+Get info about UBI volumes
+	# ubinfo -a
+
+Get info about specific volume
+	# ubinfo -n 0 -d 0
+	Volume ID:   0 (on ubi0)
+	Type:        dynamic
+	Alignment:   1
+	Size:        1229 LEBs (156053504 bytes, 148.8 MiB)
+	State:       OK
+	Name:        rootfs
+	Character device major/minor: 249:1
+
+Mount UBI volume rootfs
+	# mount -t ubifs ubi0:rootfs /media/ubi/
+
+3. Create ubifs image with one volume
+Directory 'data' contains files for ubifs volume
+
+	# cat
+	[ubifs]
+	mode=ubi
+	image=ubifs.img
+	vol_id=0
+	vol_size=200MiB
+	vol_type=dynamic
+	vol_name=rootfs
+	vol_flags=autoresize
+
+	# mkfs.ubifs -r data -m 2048 -e 129024 -c 2047 -o ubifs.img
+	# ubinize -o ubi.img -m 2048 -p 128KiB -s 512 ubinize.cfg
+
+4. UBIFS in u-boot
+
+Build u-boot with the following options:
+
+	#define CONFIG_SYS_USE_UBI
+	#define CONFIG_MTD_PARTITIONS
+	#define        CONFIG_CMD_UBI
+	#define        CONFIG_CMD_UBIFS
+	#define        CONFIG_RBTREE
+	#define CONFIG_LZO
+
+Besides, CONFIG_SYS_MALLOC_LEN size should be more than 512K.
+
+Suppose we have ubi image with one volume 'rootfs' in mtd4 partition. Then we
+have to do the following commands in order to get uImage from that partition:
+U-Boot> mtdparts default
+U-Boot> mtdparts
+	device nand0 <nand>, # parts = 5
+	#: name                size            offset          mask_flags
+	0: x-loader            0x00080000      0x00000000      0
+	1: u-boot              0x001e0000      0x00080000      0
+	2: u-boot-env          0x00020000      0x00260000      0
+	3: kernel              0x00400000      0x00280000      0
+	4: fs                  0x0f980000      0x00680000      0
+
+	active partition: nand0,0 - (x-loader) 0x00080000 @ 0x00000000
+
+	defaults:
+		mtdids  : nand0=nand
+	mtdparts:
+		mtdparts=nand:512k(x-loader),1920k(u-boot),128k(u-boot-env),4m(kernel),-(fs)
+
+U-Boot> ubi part nand0,4
+U-Boot> ubi info
+U-Boot> ubifsmount rootfs
+U-Boot> ubifsls
+	2746472  Fri Sep 09 15:01:45 2011  uImage
+U-Boot> ubifsload 0x80000000 uImage

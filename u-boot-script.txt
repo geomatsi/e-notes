@@ -1,0 +1,19 @@
+How to create boot.scr file.
+
+1. Create command file
+Create a file with a series of u-boot commands, for instance
+
+	# cat normal.cmd
+
+	setenv bootargs "androidboot.console=ttyS2 console=tty0 console=ttyS2,115200n8 init=/init mpurate=1000 vram=12M omapfb.mode=1024x768MR-16@60 omapdss.def_disp=dvi root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait"
+	mmc rescan ${mmcdev}
+	fatload mmc ${mmcdev} ${loadaddr} uImage
+	bootm
+
+2. Convert command file
+	# mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n 'Execute uImage.bin' -d normal.cmd normal.scr
+
+3. Copy file to boot partition of mmc card with new name (expected by u-boot).
+
+	# cp normal.scr /media/boot/boot.scr
+

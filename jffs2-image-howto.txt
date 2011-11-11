@@ -1,0 +1,49 @@
+== How to create jffs2 image from directory structure.
+
+Here we provide guidelines which are suitable for beagleboard (endianness,
+block size and other settings), but it can be easily tweaked for any other
+system.
+
+1. Suppose that we have prepared rootfs directory structure
+   located in rootfs directory.
+
+2. If you use debian you will need the following packages:
+
+	# sudo aptitude install mtd-tools mtd-utils
+
+3. Use mkfs.jffs2 to create jffs2 image
+
+	# mkfs.jffs2 -lnp -e 0x20000 -s 2048 -d ./rootfs -o image.jffs2
+
+options stand for:
+  -r, -d, --root=DIR
+	Build file system from directory DIR.  The default is the current
+	directory.
+
+  -o, --output=FILE
+	Write JFFS2 image to file FILE.  Default is the standard output.
+
+  -l, --little-endian
+  	create little-endian jffs2 image
+
+  -n, --no-cleanmarkers
+	Do not write ´CLEANMARKER´ nodes to the beginning of each erase block.
+	This option  can  be  useful  for  creating JFFS2 images for use on
+	NAND flash, and for creating images which are to be used on a variety
+	of hardware with differing erase‐block sizes
+
+  -p, --pad[=SIZE]
+	Pad output to SIZE bytes with 0xFF.  If SIZE is not specified, the
+	output is padded to the end of the final erase block.
+
+  -e, --eraseblock=SIZE
+	Use  erase block size SIZE.  The default is 64 KiB.  If you use a
+	erase block size different than the erase block size of the target MTD
+	device, JFFS2 may not perform optimally. If the SIZE specified is
+	below 4096, the units are assumed to be KiB.
+
+  -s, --pagesize=SIZE
+	Use page size SIZE.  The default is 4 KiB.  This size is the maximum
+	size of a data node.
+
+

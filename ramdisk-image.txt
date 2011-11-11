@@ -1,0 +1,50 @@
+Ramdisk tutorial
+
+==== HOW-TO create ramdisks with rootfs and boot them using u-boot
+
+1. Create file to keep ramdisk
+	host# dd if=/dev/zero of=./image.bin bs=1M count=15
+
+2. Filesystem in that file
+
+	host# sudo losetup -f ./image.bin
+	host# sudo losetup -a
+		/dev/loop0: [0815]:4122761 (/path/to/image.bin)
+
+	host# sudo fdisk /dev/loop0
+	host# sudo mke2fs /dev/loop0
+	host# sudo mount /dev/loop0 ./mnt/
+
+3. Copy filesystem to that prepared place, e.g.:
+	host# sudo tar xvfj /path/to/minimal-image-omap3-console-ttyS0.rootfs.tar.bz2 -C ./mnt/
+
+4. Umount and delete loop device
+	host# sudo umount ./mnt
+	host# sudo losetup -d /dev/loop0
+
+5. Zip ramdisk
+	host# gzip image.bin
+
+5. Create ramdisk uimage for u-boot
+	host# mkimage -A arm -O linux -T ramdisk -a 0x80a00000 -n "armv7 ramdisk" -d image.bin.gz  uRamdisk.small
+
+
+===== HOW-TO use ramdisks
+
+1. Download kernel and ramdisk to memory
+   From u-boot load kernel to $kernel_addr and load ramdisk to $ramdisk_addr. It
+   can be done either by u-boot facilities, e.g. serial/ethernet load. It can
+   be also done by BDI.
+
+2. Set proper kernel command line
+   Make kernel aware of this root filesystem:
+   	# setenv bootargs "console=ttyS2,115200 rw root=/dev/ram0 ramdisk_size=40000"
+
+3. Boot kernel
+	# bootm $kernel_addr $ramdisk_addr
+
+4. Example
+   	# bootm 0x80000000 0x80a00000
+
+
+/* vim: set filetype=esys : */
