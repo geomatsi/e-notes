@@ -1,0 +1,190 @@
+######## Experiments with headset/phones
+
+==== SCO bluetooth audio channels
+
+== Alsa configuration
+
+# cat .asoundrc 
+pcm.bt2 {
+	type bluetooth
+	device 00:15:BE:20:1D:6D
+	profile voice
+}
+
+== Test SCO recording using arecord
+
+# arecord -D bt2 -f S16_LE  /path/to/test.wav
+
+------------ bluetoothd log while recording:
+
+bluetoothd[5118]: audio/unix.c:server_cb() Accepted new client connection on unix socket (fd=23)
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_GET_CAPABILITIES
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_GET_CAPABILITIES
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_OPEN
+bluetoothd[5118]: audio/unix.c:handle_sco_open() open sco - object=ANY source=ANY destination=00:15:BE:20:1D:6D lock=read
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_OPEN
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_SET_CONFIGURATION
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_SET_CONFIGURATION
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_START_STREAM
+bluetoothd[5118]: audio/headset.c:headset_set_state() State changed /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_CONNECTED -> HEADSET_STATE_PLAY_IN_PROGRESS
+bluetoothd[5118]: audio/headset.c:sco_connect_cb() SCO socket opened for headset /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D
+bluetoothd[5118]: audio/headset.c:sco_connect_cb() SCO fd=24
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_START_STREAM
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_INDICATION -> BT_NEW_STREAM
+bluetoothd[5118]: audio/headset.c:headset_set_state() State changed /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_PLAY_IN_PROGRESS -> HEADSET_STATE_PLAYING
+
+------------ bluetoothd log on CTRL-C
+
+bluetoothd[5118]: audio/unix.c:client_cb() Unix client disconnected (fd=23)
+bluetoothd[5118]: audio/headset.c:headset_set_state() State changed /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_PLAYING -> HEADSET_STATE_CONNECTED
+bluetoothd[5118]: audio/unix.c:client_free() client_free(0xb8e71590)
+bluetoothd[5118]: src/dbus-hci.c:hcid_dbus_disconn_complete() No matching connection found for handle 42
+
+== Test SCO playback using aplay
+
+# aplay -D bt2  /path/to/test.wav
+
+------------ bluetoothd log while playing:
+
+bluetoothd[5118]: audio/unix.c:server_cb() Accepted new client connection on unix socket (fd=23)
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_GET_CAPABILITIES
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_GET_CAPABILITIES
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_OPEN
+bluetoothd[5118]: audio/unix.c:handle_sco_open() open sco - object=ANY source=ANY destination=00:15:BE:20:1D:6D lock=write
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_OPEN
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_SET_CONFIGURATION
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_SET_CONFIGURATION
+bluetoothd[5118]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_START_STREAM
+bluetoothd[5118]: audio/headset.c:headset_set_state() State changed /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_CONNECTED -> HEADSET_STATE_PLAY_IN_PROGRESS
+bluetoothd[5118]: audio/headset.c:sco_connect_cb() SCO socket opened for headset /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D
+bluetoothd[5118]: audio/headset.c:sco_connect_cb() SCO fd=24
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_START_STREAM
+bluetoothd[5118]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_INDICATION -> BT_NEW_STREAM
+bluetoothd[5118]: audio/headset.c:headset_set_state() State changed /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_PLAY_IN_PROGRESS -> HEADSET_STATE_PLAYING
+
+------------ bluetoothd log on wav file completion:
+
+bluetoothd[5118]: audio/unix.c:client_cb() Unix client disconnected (fd=23)
+bluetoothd[5118]: audio/headset.c:headset_set_state() State changed /org/bluez/5118/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_PLAYING -> HEADSET_STATE_CONNECTED
+bluetoothd[5118]: audio/unix.c:client_free() client_free(0xb8e71590)
+bluetoothd[5118]: src/dbus-hci.c:hcid_dbus_disconn_complete() No matching connection found for handle 42
+
+== Test SCO playback using mplayer
+
+# mplayer -ao alsa:device=bt2 /path/to/test.mp3
+
+------------ bluetoothd log while playing:
+
+bluetoothd[7428]: audio/unix.c:server_cb() Accepted new client connection on unix socket (fd=30)
+bluetoothd[7428]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_GET_CAPABILITIES
+bluetoothd[7428]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_GET_CAPABILITIES
+bluetoothd[7428]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_OPEN
+bluetoothd[7428]: audio/unix.c:handle_sco_open() open sco - object=ANY source=ANY destination=00:15:BE:20:1D:6D lock=write
+bluetoothd[7428]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_OPEN
+bluetoothd[7428]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_SET_CONFIGURATION
+bluetoothd[7428]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_SET_CONFIGURATION
+bluetoothd[7428]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_START_STREAM
+bluetoothd[7428]: audio/headset.c:headset_set_state() State changed /org/bluez/7428/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_CONNECTED -> HEADSET_STATE_PLAY_IN_PROGRESS
+bluetoothd[7428]: audio/headset.c:sco_connect_cb() SCO socket opened for headset /org/bluez/7428/hci0/dev_00_15_BE_20_1D_6D
+bluetoothd[7428]: audio/headset.c:sco_connect_cb() SCO fd=31
+bluetoothd[7428]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_START_STREAM
+bluetoothd[7428]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_INDICATION -> BT_NEW_STREAM
+bluetoothd[7428]: audio/headset.c:headset_set_state() State changed /org/bluez/7428/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_PLAY_IN_PROGRESS -> HEADSET_STATE_PLAYING
+
+------------ bluetoothd log on mplayer exit:
+
+bluetoothd[7428]: audio/unix.c:client_cb() Unix client disconnected (fd=30)
+bluetoothd[7428]: audio/headset.c:headset_set_state() State changed /org/bluez/7428/hci0/dev_00_15_BE_20_1D_6D: HEADSET_STATE_PLAYING -> HEADSET_STATE_CONNECTED
+bluetoothd[7428]: audio/unix.c:client_free() client_free(0xb8a81090)
+bluetoothd[7428]: plugins/hciops.c:disconn_complete() handle 46 status 0x00
+
+
+==== A2DP bluetooth audio channels
+
+== A2DP playback using mplayer
+
+# cat .asoundrc 
+pcm.bt2 {
+	type bluetooth
+	device 00:15:BE:20:1D:6D
+	profile hifi
+}
+
+# mplayer -ao alsa:device=bt2 /path/to/test.mp3 
+
+------------ bluetoothd log while playing:
+
+bluetoothd[5378]: audio/unix.c:server_cb() Accepted new client connection on unix socket (fd=22)
+bluetoothd[5378]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_GET_CAPABILITIES
+bluetoothd[5378]: audio/avdtp.c:avdtp_ref() 0xb82c9128: ref=3
+bluetoothd[5378]: audio/unix.c:print_sbc() Media Codec: SBC Channel Modes: Mono DualChannel Stereo JointStereo Frequencies: 16Khz 32Khz 44.1Khz 48Khz  Subbands: 4 8  Blocks: 4 8 12 16  Bitpool: 2-32
+bluetoothd[5378]: audio/unix.c:a2dp_append_codec() Append configured seid 1 - length 13 - total 181
+bluetoothd[5378]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_GET_CAPABILITIES
+bluetoothd[5378]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_OPEN
+bluetoothd[5378]: audio/unix.c:handle_a2dp_open() open a2dp - object=ANY source=ANY destination=00:15:BE:20:1D:6D lock=write
+bluetoothd[5378]: audio/a2dp.c:a2dp_sep_lock() SEP 0xb8286338 locked
+bluetoothd[5378]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_OPEN
+bluetoothd[5378]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_SET_CONFIGURATION
+bluetoothd[5378]: audio/unix.c:print_sbc() Media Codec: SBC Channel Modes: JointStereo Frequencies: 44.1Khz  Subbands: 8  Blocks: 16  Bitpool: 2-32
+bluetoothd[5378]: audio/a2dp.c:a2dp_config() a2dp_config: selected SEP 0xb8286338
+bluetoothd[5378]: audio/avdtp.c:avdtp_ref() 0xb82c9128: ref=4
+bluetoothd[5378]: audio/a2dp.c:setup_ref() 0xb82c82f0: ref=1
+bluetoothd[5378]: audio/a2dp.c:a2dp_config() Configuration match: resuming
+bluetoothd[5378]: audio/a2dp.c:setup_ref() 0xb82c82f0: ref=2
+bluetoothd[5378]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_SET_CONFIGURATION
+bluetoothd[5378]: audio/a2dp.c:setup_unref() 0xb82c82f0: ref=1
+bluetoothd[5378]: audio/a2dp.c:setup_unref() 0xb82c82f0: ref=0
+bluetoothd[5378]: audio/a2dp.c:setup_free() 0xb82c82f0
+bluetoothd[5378]: audio/avdtp.c:avdtp_unref() 0xb82c9128: ref=3
+bluetoothd[5378]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_START_STREAM
+bluetoothd[5378]: audio/avdtp.c:avdtp_ref() 0xb82c9128: ref=4
+bluetoothd[5378]: audio/a2dp.c:setup_ref() 0xb82c82f0: ref=1
+bluetoothd[5378]: audio/avdtp.c:session_cb() 
+bluetoothd[5378]: audio/avdtp.c:avdtp_parse_resp() START request succeeded
+bluetoothd[5378]: audio/a2dp.c:start_cfm() Source 0xb8286338: Start_Cfm
+bluetoothd[5378]: audio/a2dp.c:setup_ref() 0xb82c82f0: ref=2
+bluetoothd[5378]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_START_STREAM
+bluetoothd[5378]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_NEW_STREAM
+bluetoothd[5378]: audio/a2dp.c:setup_unref() 0xb82c82f0: ref=1
+bluetoothd[5378]: audio/a2dp.c:setup_unref() 0xb82c82f0: ref=0
+bluetoothd[5378]: audio/a2dp.c:setup_free() 0xb82c82f0
+bluetoothd[5378]: audio/avdtp.c:avdtp_unref() 0xb82c9128: ref=3
+bluetoothd[5378]: audio/avdtp.c:avdtp_sep_set_state() stream state changed: OPEN -> STREAMING
+
+
+------------ bluetoothd log on mplayer exit:
+
+bluetoothd[5378]: audio/unix.c:client_cb() Unix client disconnected (fd=22)
+bluetoothd[5378]: audio/a2dp.c:a2dp_sep_unlock() SEP 0xb8286338 unlocked
+bluetoothd[5378]: audio/avdtp.c:avdtp_unref() 0xb82c9128: ref=2
+bluetoothd[5378]: audio/unix.c:client_free() client_free(0xb8287ff0)
+bluetoothd[5378]: audio/a2dp.c:a2dp_cancel() a2dp_cancel()
+bluetoothd[5378]: audio/avdtp.c:session_cb() 
+bluetoothd[5378]: audio/avdtp.c:avdtp_parse_resp() SUSPEND request succeeded
+bluetoothd[5378]: audio/avdtp.c:avdtp_sep_set_state() stream state changed: STREAMING -> OPEN
+bluetoothd[5378]: audio/a2dp.c:suspend_cfm() Source 0xb8286338: Suspend_Cfm
+
+
+== A2DP playback using gstreamer
+
+# gst-launch filesrc location=/path/to/test.mp3 ! mad ! audioconvert ! sbcenc ! a2dpsink device="00:15:BE:20:1D:6D"
+
+==== CookBook
+
+== Play input from bluetooth headset to default alsa output
+
+# arecord -D bt2 -f S16_LE | aplay
+
+== Play input from bluetooth headset to bluetooth headset: listen what you speak
+
+# arecord -D bt2 -f S16_LE | aplay -D bt2 -f S16_LE
+
+== Play input from default microphone to bluetooth headset:
+
+# arecord -f S16_LE | aplay -D bt2 -f S16_LE
+
+
+
+
+
+
