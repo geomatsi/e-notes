@@ -185,6 +185,111 @@ bluetoothd[5378]: audio/a2dp.c:suspend_cfm() Source 0xb8286338: Suspend_Cfm
 
 
 
+######## Experiments with phone: PC workis like in-vehicle HFP device
 
+==== BlueZ + oFono without pulseaudio
+
+== Setup and procedure
+
+0. Add bluetooth device to alsa:
+
+# cat ~/.asoundrc
+pcm.phone {
+	type bluetooth
+	device 34:7E:39:33:AC:6D
+	profile hfp
+}
+
+1. Start BlueZ
+
+# sudo bluetoothd -d -n
+
+2. Start OFono
+
+# sudo ofonod -d -n
+
+3. Make sure pulsaudio is not running or bluetooth discovery module is disabled
+
+4. Pair mobile phone
+
+5. Connect phone to ofono
+
+# <root-ofono-source-tree>/test/enable-modem
+ 
+------------ bluetoothd log after enabling modem:
+
+bluetoothd[10949]: plugins/hciops.c:conn_complete() status 0x00
+bluetoothd[10949]: src/adapter.c:adapter_get_device() 34:7E:39:33:AC:6D
+bluetoothd[10949]: plugins/hciops.c:remote_features_information() hci0 status 0
+bluetoothd[10949]: plugins/hciops.c:remote_name_information() hci0 status 0
+bluetoothd[10949]: plugins/hciops.c:link_key_request() hci0 dba 34:7E:39:33:AC:6D
+bluetoothd[10949]: plugins/hciops.c:get_auth_info() hci0 dba 34:7E:39:33:AC:6D
+bluetoothd[10949]: plugins/hciops.c:link_key_request() kernel auth requirements = 0x04
+bluetoothd[10949]: plugins/hciops.c:link_key_request() Matching key found
+bluetoothd[10949]: plugins/hciops.c:link_key_request() link key type 0x00
+bluetoothd[10949]: plugins/hciops.c:auth_complete() hci0 status 0
+bluetoothd[10949]: plugins/hciops.c:bonding_complete() status 0x00
+bluetoothd[10949]: src/event.c:btd_event_bonding_complete() status 0x00
+bluetoothd[10949]: src/adapter.c:adapter_get_device() 34:7E:39:33:AC:6D
+bluetoothd[10949]: src/device.c:device_bonding_complete() bonding (nil) status 0x00
+bluetoothd[10949]: audio/gateway.c:newconnection_reply() Agent reply: file descriptor passed successfully
+bluetoothd[10949]: audio/main.c:sco_server_cb() Accepted SCO connection from 34:7E:39:33:AC:6D
+bluetoothd[10949]: audio/gateway.c:sco_io_cb() sco connection is released
+bluetoothd[10949]: plugins/hciops.c:disconn_complete() handle 46 status 0x00
+
+
+6. Make a call to mobile or call from mobile:
+
+# <root-ofono-source-tree>/test/dial-number <number to call>
+
+Note how little output is provided by bluetooth - SCO socket shouldn't be acquired by someone else (!):
+
+------------ bluetoothd log after call is made:
+
+bluetoothd[10949]: audio/main.c:sco_server_cb() Accepted SCO connection from 34:7E:39:33:AC:6D
+
+7. Route audio to/from phone
+
+Now SCO socket is ready to be read/written with audio data. The simplest way to do it is to use alsa test tools:
+
+in one console route audio from default input (alsa microphone) to the phone:
+
+# arecord -f S16_LE | aplay -D phone
+
+
+------------ bluetoothd log after launching arecord:
+
+
+bluetoothd[10949]: audio/unix.c:server_cb() Accepted new client connection on unix socket (fd=27)
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_GET_CAPABILITIES
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_GET_CAPABILITIES
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_OPEN
+bluetoothd[10949]: audio/unix.c:handle_sco_open() open sco - object=ANY source=ANY destination=34:7E:39:33:AC:6D lock=write
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_OPEN
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_SET_CONFIGURATION
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_SET_CONFIGURATION
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_START_STREAM
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_START_STREAM
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_INDICATION -> BT_NEW_STREAM
+
+in another console route audio from the phone to default audio outut (alsa speakers or alsa headphones):
+
+# arecord -D phone -f S16_LE | aplay
+
+
+------------ bluetoothd log after launching arecord:
+
+
+bluetoothd[10949]: audio/unix.c:server_cb() Accepted new client connection on unix socket (fd=28)
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_GET_CAPABILITIES
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_GET_CAPABILITIES
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_OPEN
+bluetoothd[10949]: audio/unix.c:handle_sco_open() open sco - object=ANY source=ANY destination=34:7E:39:33:AC:6D lock=read
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_OPEN
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_SET_CONFIGURATION
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_SET_CONFIGURATION
+bluetoothd[10949]: audio/unix.c:client_cb() Audio API: BT_REQUEST <- BT_START_STREAM
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_RESPONSE -> BT_START_STREAM
+bluetoothd[10949]: audio/unix.c:unix_ipc_sendmsg() Audio API: BT_INDICATION -> BT_NEW_STREAM
 
 
