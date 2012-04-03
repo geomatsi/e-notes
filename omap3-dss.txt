@@ -1,0 +1,95 @@
+==== Kernel configuration
+
+1. Enable omap2+ dss subsystem:
+
+Device drivers
+    Graphics support
+        OMAP2+ Display Subsystem support
+            DPI support && VENC support && OMAP2+ frame buffer support ...
+
+2. Enable omap2+ framebuffer
+
+Device drivers
+    Graphics support
+        OMAP2+ Display Subsystem support
+            OMAP2+ frame buffer support ...
+                Number of framebuffers
+
+3. Display device drivers
+
+Device drivers
+    Graphics support
+        OMAP2+ Display Subsystem support
+            OMAP2/3 Display Device Drivers
+                Generic DPI Panel && DVI output
+
+Note:
+Some time ago (e.g. in <= 2.6.37) 'Generic Panel' had to be enabled in order to
+enable DVI output on Beagleboard. On recent kernels (e.g. >= 3.3) DVI output
+on Beagleboard is handled by 'DVI output'.
+
+4. Enable v4l2 display driver
+Device drivers
+    Multimedia support
+        Video capture adapters
+            V4L platform devices
+                OMAP2/OMAP3 V4L2-Display driver
+
+5. Framebuffers
+
+OMAP3 DSS supports 3 overlays (GFX, VIDEO0, VIDEO1) and 2 displays (LCD/DVI
+and TV). So it is possible to set number of framebuffers from 1 to 3. However
+if it is planned to use v4l2 display driver than the number of framebuffers
+should be less than 3. In this case overlays which are not attached to
+framebuffers will be attached to v4l2 devices:
+
+3 = #{framebuffers: /dev/fbX} + #{video devices: /dev/videoX}
+
+
+==== Kernel command line parameters
+
+Sample kernel params specific to dss subsystem:
+    vram=12M omapdss.def_disp=dvi omapfb.mode=dvi:800x480MR-16 omapfb.vram=0:4M,1:4M,2:4M
+
+==== Control knobs in sysfs
+
+==== Test tools
+
+There are two specific utilities that use omap framebuffer: gstreamer plugin
+omapfb and omapfbplay player.
+
+== gst-omapfb
+
+Source: http//github.com/felipec/gst-omapfb
+Note that gst-omapfb in OpenEmbedded 2011.03-maintenance is supplied with
+patch implementing overlay for X. If you plan to use this plugin on OMAP3
+device without X then do not apply that patch.
+
+Usage:
+    dev# gst-launch videotestsrc ! omapfbsink
+
+Notes:
+    - destination framebuffer is hardcoded to 'fb1'
+
+== omapfbplay
+
+Source: http://git.mansr.com/?p=omapfbplay;a=summary
+
+Usage:
+    dev# omapfbplay /path/to/videofile
+This tool doesn't have any command line help. All the options have to be
+figured out from the source code. Here are several examples:
+
+    dev# omapfbplay -d omapfb /path/to/file
+        specify omap framebuffer as output device; fb1 framebuffer is
+        hardcoded and can't be changed from the command line
+
+    dev# omapfbplay -d v4l2 /path/to/file
+    dev# omapfbplay -d v4l2:/dev/video0 /path/to/file
+        specify v4l2 video overlay as output device; /dev/video1 is default
+        device, but it can be changed as it shown in the second example
+
+Notes:
+
+
+/* vim: set filetype=esys : */
