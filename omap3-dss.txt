@@ -89,6 +89,9 @@ figured out from the source code. Here are several examples:
         specify v4l2 video overlay as output device; /dev/video1 is default
         device, but it can be changed as it shown in the second example
 
+    dev# omapfbplay -d v4l2 -t 100,100,500
+        specify v4l2 video overlay as output device, then generate test video
+        with size 100x100 and length 500 (msec ?)
 Notes:
 
 
