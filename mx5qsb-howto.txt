@@ -1,0 +1,28 @@
+==== HOWTO for iMX53 Quick Start Board
+
+* HOW-TO prepare u-boot
+
+NB: there is a good and detailed explanation available: see doc/README.imximage in u-boot source tree.
+
+1. Configure and build U-Boot
+
+    host# make LANG=C CROSS_COMPILE=/path/to/toolchain mx53loco_config
+    host# make LANG=C CROSS_COMPILE=/path/to/toolchain u-boot.imx
+
+    The result is u-boot image specific for imx: u-boot.imx
+
+2. Write u-boot to mmc card
+    Prepare mmc card in a usual way, but start the first partition not from
+    the first cylinder: keep some space in the beginning of mmc card for
+    u-boot.imx image. The actual start cylinder depends on card geometry
+    (cylinder size) and u-boot.imx image size.
+
+    After mmc and its partition are ready, then write u-boot.imx image:
+
+    host# sudo dd if=./u-boot.imx of=/dev/sdX bs=512 seek=2
+
+    This command copies the u-boot image at the address 0x400, as required
+    by the processor.
+
+
+/* vim: set filetype=esys : */
