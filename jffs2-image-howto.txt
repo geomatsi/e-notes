@@ -45,5 +45,30 @@ options stand for:
 	Use page size SIZE.  The default is 4 KiB.  This size is the maximum
 	size of a data node.
 
+==== How to burn jffs2 image to nand flash
+
+* Figure out amount of eraseblocks:
+
+	dev# mtdinfo /dev/mtd2
+		mtd2
+		Name:                           rootfs
+		Type:                           nand
+		Eraseblock size:                131072 bytes, 128.0 KiB
+		Amount of eraseblocks:          4075 (534118400 bytes, 509.4 MiB)
+		Minimum input/output unit size: 2048 bytes
+		Sub-page size:                  512 bytes
+		OOB size:                       64 bytes
+		Character device major/minor:   90:4
+		Bad blocks are allowed:         true
+		Device is writable:             true
+
+* Cleanup nand partition
+
+	dev# flash_erase /dev/mtd2 0 4075
+
+* Write new jffs2 image
+
+	dev# nandwrite -p -m  /dev/mtd2 /path/to/image.jffs2
+
 
 /* vim: set filetype=esys : */
