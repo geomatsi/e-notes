@@ -1,4 +1,4 @@
-==== How to create boot.scr file.
+==== How to create boot.scr file
 
 1. Create command file
 Create a file with a series of u-boot commands, for instance
@@ -15,5 +15,61 @@ bootm
 3. Copy file to boot partition of mmc card with new name (expected by u-boot).
 
 	host# cp normal.scr /media/boot/boot.scr
+
+==== How to create uEnv.txt file
+
+uEnv file is just an environment that can be imported when U-Boot is running. Suppose we
+have the following uEnv.txt file:
+
+host# cat uEnv.txt
+loaduimage=fatload mmc 0 ${loadaddr} uImage
+bootargs=console=ttyO2,115200 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait
+bootcmd=run loaduimage; bootm ${loadaddr}
+
+In this case we can use the following command sequence in order to import this environment
+and boot the board using our set of defined variables and commands:
+
+UBoot> mmc rescan
+UBoot> fatload mmc 0 $loadaddr uEnv.txt
+UBoot> env import -t $loadaddr $filesize
+UBoot> boot
+
+Suppose we are running upstream U-Boot on beagleboard. By default U-Boot defines the following
+boot command (see include/configs/omap3_beagle.h in U-Boot source tree):
+
+#define CONFIG_BOOTCOMMAND \
+        "mmc dev ${mmcdev}; if mmc rescan; then " \
+                "if run userbutton; then " \
+                        "setenv bootenv uEnv.txt;" \
+                "else " \
+                        "setenv bootenv user.txt;" \
+                "fi;" \
+                "echo SD/MMC found on device ${mmcdev};" \
+                "if run loadbootenv; then " \
+                        "echo Loaded environment from ${bootenv};" \
+                        "run importbootenv;" \
+                "fi;" \
+                "if test -n $uenvcmd; then " \
+                        "echo Running uenvcmd ...;" \
+                        "run uenvcmd;" \
+                "fi;" \
+                "if run loaduimage; then " \
+                        "run mmcboot;" \
+                "fi;" \
+        "fi;" \
+        "run nandboot;" \
+
+So in this case one would want to replace 'bootcmd' in uEnv.txt file by 'uenvcmd'. For instance:
+
+host# cat uEnv.txt
+loaduimage=fatload mmc 0 ${loadaddr} uImage
+bootargs=console=ttyO2,115200 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait
+uenvcmd=run loaduimage; bootm ${loadaddr}
+host#
+
+In this case we need the only command:
+
+UBoot> boot
+
 
 /* vim: set filetype=esys : */
