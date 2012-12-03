@@ -95,4 +95,88 @@ figured out from the source code. Here are several examples:
 Notes:
 
 
+==== Using S-Video on Beagleboard
+
+Lets assume that we have a kernel with old good framebuffers rather than new
+shiny drm. Suppose our kernel is configured in such a way that we have two
+framebuffer devices /dev/fb[01] and one v4l device /dev/video0.
+
+Boot the kernel with the following parameters:
+    UBoot> setenv bootargs 'console=ttyO2,115200 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait omapfb.vram=0:4M,1:4M,2:4M'
+
+Use dss entries in sysfs to configure proper display output.
+
+Disable displays:
+    dev# echo 0 > /sys/devices/platform/omapdss/display0/enabled
+    dev# echo 0 > /sys/devices/platform/omapdss/display1/enabled
+
+Disable overlays:
+    dev# echo 0 > /sys/devices/platform/omapdss/overlay0/enabled
+    dev# echo 0 > /sys/devices/platform/omapdss/overlay1/enabled
+    dev# echo 0 > /sys/devices/platform/omapdss/overlay2/enabled
+
+Set lcd manager for overlay0:
+    dev# echo 'lcd' > /sys/devices/platform/omapdss/overlay0/manager
+
+Set tv manager for overlay0 and overlay1:
+    dev# echo 'tv' > /sys/devices/platform/omapdss/overlay1/manager
+    dev# echo 'tv' > /sys/devices/platform/omapdss/overlay2/manager
+
+Set any reasonable resolution on dvi display:
+    dev# fbset -fb /dev/fb0 -g 1024 768 1024 768 32
+    dev# fbset -fb /dev/fb0
+    mode "1024x768-93"
+        # D: 108.003 MHz, H: 75.421 kHz, V: 93.112 Hz
+        geometry 1024 768 1024 768 32
+        timings 9259 248 48 38 1 112 3
+        hsync high
+        vsync high
+        rgba 8/16,8/8,8/0,0/0
+    endmode
+
+#if WANT_PAL_RESOLUTION_ON_TV:
+
+    Set PAL resolution for tv output:
+        dev# echo "720x574" > /sys/devices/platform/omapdss/overlay1/output_size
+
+    Set PAL resolution for tv display:
+        dev# fbset -fb /dev/fb1 -xres 720 -yres 574 -vxres 720 -vyres 574
+        dev# fbset -fb /dev/fb1
+        mode "720x574-50"
+            # D: 13.500 MHz, H: 15.625 kHz, V: 50.000 Hz
+            geometry 720 574 720 574 32
+            timings 74074 68 12 41 5 64 5
+            hsync high
+            vsync high
+            laced true
+            rgba 8/16,8/8,8/0,0/0
+        endmode
+#else /* WANT_NTSC_RESOLUTION_ON_TV */
+
+    Set NTSC resolution for tv output:
+        dev# echo "720x482" > /sys/devices/platform/omapdss/overlay1/output_size
+
+    Set NTSC resolution for tv display:
+        dev# fbset -fb /dev/fb0 -xres 720 -yres 482 -vxres 720 -vyres 482
+        dev# fbset -fb /dev/fb1
+        mode "720x482-59"
+            # D: 13.500 MHz, H: 15.625 kHz, V: 58.630 Hz
+            geometry 720 482 720 482 32
+            timings 74074 68 12 41 5 64 5
+            hsync high
+            vsync high
+            laced true
+            rgba 8/16,8/8,8/0,0/0
+        endmode
+
+#endif
+
+Enable displays:
+    dev# echo 1 > /sys/devices/platform/omapdss/display0/enabled
+    dev# echo 1 > /sys/devices/platform/omapdss/display1/enabled
+
+Enable overlays:
+    dev# echo 1 > /sys/devices/platform/omapdss/overlay0/enabled
+    dev# echo 1 > /sys/devices/platform/omapdss/overlay1/enabled
+
 /* vim: set filetype=esys : */
