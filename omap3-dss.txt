@@ -95,7 +95,67 @@ figured out from the source code. Here are several examples:
 Notes:
 
 
-==== Using S-Video on Beagleboard
+==== Using S-Video on Beagleboard: auto settings
+
+Lets assume that we have a kernel with old good framebuffers rather than new
+shiny drm. Suppose our kernel is configured in such a way that we have two
+framebuffer devices /dev/fb[01] and one v4l device /dev/video0.
+
+Boot the kernel with the following parameters:
+    UBoot> setenv bootargs 'console=ttyO2,115200 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait omapfb.vram=0:4M,1:4M,2:4M omapfb.mode=tv:pal omapdss.def_disp=tv'
+
+After boot we have the following configuration (at least for kernel 3.7-rc7):
+
+	dev# cat /sys/devices/platform/omapdss/display*/enabled
+	0
+	0
+
+	dev# cat /sys/devices/platform/omapdss/overlay*/enabled
+	1
+	0
+	0
+
+	dev# cat /sys/devices/platform/omapdss/overlay*/manager
+	tv
+	tv
+	tv
+
+	dev# fbset -fb /dev/fb0
+	mode "720x574-50"
+		# D: 13.500 MHz, H: 15.625 kHz, V: 50.000 Hz
+		geometry 720 574 720 574 32
+		timings 74074 68 12 41 5 64 5
+		hsync high
+		vsync high
+		laced true
+		rgba 8/16,8/8,8/0,0/0
+	endmode
+
+	dev# fbset -fb /dev/fb1
+	mode "720x574-50"
+		# D: 13.500 MHz, H: 15.625 kHz, V: 50.000 Hz
+		geometry 720 574 720 574 32
+		timings 74074 68 12 41 5 64 5
+		hsync high
+		vsync high
+		laced true
+		rgba 8/16,8/8,8/0,0/0
+	endmode
+
+Note that all overlays are linked to tv manager. By default displays are disabled, so
+we have to enable S-Video display:
+	dev# echo 1 >  /sys/devices/platform/omapdss/display1/enabled
+
+Now we can test output to S-Video:
+	dev# gst-launch videotestsrc ! omapfbsink
+	dev# gst-launch videotestsrc ! fbdevsink
+
+Note that by default omapfbsink sends video to /dev/fb1 and fbdevsink to /dev/fb0. Both
+commands can be used for S-Video output as in current configuration both overlays - 0 and
+1 - are linked to tv manager (see configuration dumps above).
+
+
+==== Using S-Video on Beagleboard: manual settings
 
 Lets assume that we have a kernel with old good framebuffers rather than new
 shiny drm. Suppose our kernel is configured in such a way that we have two
@@ -122,17 +182,17 @@ Set tv manager for overlay0 and overlay1:
     dev# echo 'tv' > /sys/devices/platform/omapdss/overlay1/manager
     dev# echo 'tv' > /sys/devices/platform/omapdss/overlay2/manager
 
-Set any reasonable resolution on dvi display:
-    dev# fbset -fb /dev/fb0 -g 1024 768 1024 768 32
-    dev# fbset -fb /dev/fb0
-    mode "1024x768-93"
-        # D: 108.003 MHz, H: 75.421 kHz, V: 93.112 Hz
-        geometry 1024 768 1024 768 32
-        timings 9259 248 48 38 1 112 3
-        hsync high
-        vsync high
-        rgba 8/16,8/8,8/0,0/0
-    endmode
+Set appropriate resolution on dvi display:
+	dev# fbset -fb /dev/fb0 -g 600 400 600 400 16
+	dev# fbset -fb /dev/fb0
+	mode "600x400-182"
+		# D: 72.005 MHz, H: 76.438 kHz, V: 181.563 Hz
+		geometry 600 400 600 400 16
+		timings 13888 120 190 3 13 32 5
+		hsync high
+		vsync high
+		rgba 5/11,6/5,5/0,0/0
+	endmode
 
 #if WANT_PAL_RESOLUTION_ON_TV:
 
@@ -178,5 +238,19 @@ Enable displays:
 Enable overlays:
     dev# echo 1 > /sys/devices/platform/omapdss/overlay0/enabled
     dev# echo 1 > /sys/devices/platform/omapdss/overlay1/enabled
+
+Now we can test output to S-Video:
+	dev# gst-launch videotestsrc ! omapfbsink
+
+as well as output to DVI:
+	dev# gst-launch videotestsrc ! fbdevsink
+
+
+FIXME:
+For some reason I can not set good resolution for dvi output in this setup when both
+video outputs (s-video and dvi) are enabled. Well, it can be done and gstreamer for
+fbdevsink works fine. However gstreamer example for omapfbsink does not work: it tries to
+set some strange resolutions for fb0 which which apparently resemble resolutions for fb1.
+Probably omapfbsink reads resolution from a wrong place.
 
 /* vim: set filetype=esys : */
