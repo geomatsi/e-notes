@@ -1,0 +1,20 @@
+==== Troubleshooting
+
+* HOWTO: enable early printk
+
+Check if you have the following two settings in kernel config:
+	CONFIG_DEBUG_LL=y
+	CONFIG_EARLY_PRINTK=y
+
+If not, then enable early printk feature in kernel configuration:
+
+Kernel hacking ---> go to the bottom of that menu
+    Kernel low-level debugging functions
+	Early printk
+
+Then enable earlyprintk in kernel boot parameters:
+	UBoot> setenv bootargs 'console=ttyO2,115200 earlyprintk'
+
+Now go and boot kernel...
+
+/* vim: set filetype=esys : */
