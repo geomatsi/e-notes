@@ -1,0 +1,218 @@
+==== HFP using pulseaudio/ofono/bluez
+
+== Prepare software
+It is not necessary to build everything from scratch. It is possible to use
+any versions available in the distribution in use. However brief build
+instructions are provided here for specific versions of the software in use.
+Specified versions have been tested, others were not. So there are might be some
+incompatibilities between pulseaudio/ofono/bluez when their version don't
+match: e.g. incorrect dbus method signatures and so on. In this case careful
+debug log inspection may help to detect the problem.
+
+Prerequisite: alsa libs and utils, libasound2, libsndfile, speex and some other deps
+
+* sbc [for pulseaudio v4.0]
+version: v1.1 (branch:master commit:ec14d34809303205d645d64c4b91deff47f557e1)
+    host# git clone git://git.kernel.org/pub/scm/bluetooth/sbc.git
+    host# cd sbc
+    host# ./bootstrap
+    host# ./configure
+    host# make && make install
+
+* bluez
+version: v4.101 (tag:4.101 commit:67ef3ac83752e3705fad55eb25586e1d21e44c2e)
+    host# git clone git://git.kernel.org/pub/scm/bluetooth/bluez.git
+    host# cd bluez
+    host# ./bootstrap
+    host# ./configure --enable-alsa --enable-tools --enable-usb --enable-debug
+    host# make && make install
+
+* ofono
+version: v1.10 (tag:1.10 commit:5df67b2ec663ddbf6b4e782a28399b87ec6d2880)
+    host# git clone git://git.kernel.org/pub/scm/network/ofono/ofono.git
+    host# cd ofono
+    host# ./bootstrap
+    host# ./configure
+    host# make && make install
+
+* pulseaudio
+version: v2.1 (tag:v2.1 commit:40713647e7e66d8f1d893618037e00c09bdeb99d)
+version: v4.0 (branch:master commit:ecf3ab2b5788c85c237eeb6429bd1d525b9ac0cc)
+    host# git clone git://anongit.freedesktop.org/pulseaudio/pulseaudio
+    host# cd pulseaudio
+    host# ./autogen.sh
+    host# make && make install
+
+
+==== Setup software
+
+Note that location of config files may differ from one system to another. For
+instance, it can be /etc or /usr/local/etc. E.g., latter is the case in some
+distributions for manually built software.
+
+* bluez
+
+audio configuration: /etc/bluetooth/audio.conf
+
+Make sure that the following settings are available in bluez4 audio
+configuration:
+
+[General]
+Master=true
+Enable=Gateway,Socket,Source,Sink,Media,Control,Headset
+AutoConnect=true
+
+[Headset]
+HFP=true
+MaxConnected=1
+
+[A2DP]
+SBCSources=1
+MPEG12Sources=0
+
+* pulseaudio
+
+system config: /etc/pulse/system.pa or /usr/local/etc/pulse/system.pa
+
+Make sure that the following settings are available in pulseaudio system
+configuration:
+
+### Automatically suspend sinks/sources that become idle for too long
+load-module module-suspend-on-idle timeout=60
+
+### Bluetooth modules
+load-module module-bluetooth-discover
+
+# !!!! only for pulseaudio-v4.0
+load-module module-bluetooth-policy hfgw=1
+
+
+==== Start software
+
+To run demo we need several test scripts from bluez4 and ofono source trees:
+
+* from ofono (<ofono>/test/)
+  answer-calls
+  dial-numbe
+  hangup-active
+  list-modem
+  enable-modem
+  disable-modem
+
+* from bluez4 (<bluez4>/test/)
+  simple-agent
+
+Open four consoles on the system and run all involved pieces of software in
+foreground mode in order to monitor debug output:
+
+    host-1# blutoothd -d -n
+
+    host-2# ofono -d -n
+
+    host-3# pulseaudio -vvv
+
+
+==== HFP demo with pulseaudio-4.0
+
+Scan bluetooth devices and found your phone:
+    host-4# hcitool scan
+    Scanning ...
+        34:7E:39:33:AC:6D   5800
+
+Pair with your phone:
+    host-4# ./simple-agent hci0 34:7E:39:33:AC:6D
+    RequestPinCode (/org/bluez/31485/hci0/dev_34_7E_39_33_AC_6D)
+    Enter PIN Code: 0000
+    Release
+    New device (/org/bluez/31485/hci0/dev_34_7E_39_33_AC_6D)
+
+
+List modems:
+    host-4# ./list-modems
+    [ /hfp/001583C707B3_347E3933AC6D ]
+        Features =
+        Emergency = 0
+        Powered = 0
+        Lockdown = 0
+        Interfaces =
+        Online = 0
+        Type = hfp
+        Name = 5800
+
+Enable your phone as modem:
+    host-4# ./enable-modem
+    Connecting modem /hfp/001583C707B3_347E3933AC6D...
+
+Make/accept calls:
+
+* Make call:
+    host-4# ./dial-number XXXXX
+
+* Hangup active call:
+    host-4# ./hangup-active
+
+* Accept incoming calls:
+    host-4# ./answer-calls
+
+Disable modem:
+    host-4# ./disable-modem
+
+
+==== HFP demo with pulseaudio-2.1
+In earlier versions of pulseaudio there is no bluetooth-policy module which
+automatically connects bluetooth audio sink/source with default audio
+source/sink using loopback. In this case that connection should be done
+manually. That is why all the steps are the same as in the previous case, but
+there is a couple of additional commands to pulseaudio.
+
+Normal workflow:
+    host-4# ./simple-agent hci0 34:7E:39:33:AC:6D
+    host-4# ./enable-modem
+    host-4# ./dial-number XXXXX
+
+And now manual connection of pulseaudio sources/sinks:
+
+    host-4# pactl load-module module-loopback sink=alsa_output.usb-Logitech_Logitech_USB_Headset-00-Headset.analog-stereo source=bluez_source.34_7E_39_33_AC_6D source_dont_move=true sink_dont_move=true latency_msec=1
+    host-4# pactl load-module module-loopback source=alsa_input.usb-Logitech_Logitech_USB_Headset-00-Headset.analog-mono sink=bluez_sink.34_7E_39_33_AC_6D source_dont_move=true sink_dont_move=true latency_msec=1
+
+Here Logitech is a default audio card in this example setup.
+
+Then again normal workflow:
+    host-4# ./hangup-active
+
+
+==== HFP demo: troubleshooting
+
+* check unix permissions carefully
+Make sure that all daemons in use have access to required facilities, e.g.:
+  - pulseaudio needs access to /dev/snd => pulse should be in audio group
+  - test user needs access to pulseaudio (using pactl) => this user should be in pulse-access group
+  - and so on: check logs !!!
+
+* check dbus permissions
+Make sure that pulseaudio has access to bluez4 over dbus. Otherwise some
+strange crashes may occur. Fortunately pulseaudio loudly complains (in red
+color) when something is wrong. In that case you may need to explicitely punch
+some holes in /etc/dbus-1/system.d/bluetooth.conf, e.g.:
+
+    <policy group="pulse">
+        <allow send_destination="org.bluez"/>
+    </policy>
+
+* pulseaudio crash on resampling
+Once or twice I observed pulseaudio crash during resampling adjustment. That
+crash can be eliminated using '--resample-method=trivial' pulseaudio command
+line switch.
+
+* dbus interface incompatibility
+It is possible to stumble upon dbus interface incompatibility problem: e.g.
+bluez4 provides interface which differs from what pulseaudio or ofono expect.
+Usually this means that one of those components should be updated.
+
+* logs !!! logs !!! logs !!!
+Start all three daemons in foreground mode with verbose debug and carefully
+check what they complain about.
+
+
+
+/* vim: set filetype=esys : */

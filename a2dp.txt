@@ -1,0 +1,123 @@
+==== A2DP using pulseaudio and bluez4
+
+== Prepare software
+
+* sbc [for pulseaudio v4.0]
+version: v1.1 (branch:master commit:ec14d34809303205d645d64c4b91deff47f557e1)
+    host# git clone git://git.kernel.org/pub/scm/bluetooth/sbc.git
+    host# cd sbc
+    host# ./bootstrap
+    host# ./configure
+    host# make && make install
+
+* bluez
+version: v4.101 (tag:4.101 commit:67ef3ac83752e3705fad55eb25586e1d21e44c2e)
+    host# git clone git://git.kernel.org/pub/scm/bluetooth/bluez.git
+    host# cd bluez
+    host# ./bootstrap
+    host# ./configure --enable-alsa --enable-tools --enable-usb --enable-debug
+    host# make && make install
+
+* pulseaudio
+version: v4.0 (branch:master commit:ecf3ab2b5788c85c237eeb6429bd1d525b9ac0cc)
+    host# git clone git://anongit.freedesktop.org/pulseaudio/pulseaudio
+    host# cd pulseaudio
+    host# ./autogen.sh
+    host# make && make install
+
+
+==== Setup software
+
+Note that location of config files may differ from one system to another. For
+instance, it can be /etc or /usr/local/etc. E.g., latter is the case in some
+distributions for manually built software.
+
+* pulseaudio
+
+system config: /etc/pulse/system.pa or /usr/local/etc/pulse/system.pa
+
+Make sure that the following settings are available in pulseaudio system
+configuration:
+
+### Automatically suspend sinks/sources that become idle for too long
+load-module module-suspend-on-idle timeout=60
+
+### Bluetooth modules
+load-module module-bluetooth-discover
+
+* bluez
+
+audio configuration: /etc/bluetooth/audio.conf
+
+Make sure that the following settings are available in bluez4 audio
+configuration:
+
+[General]
+Master=true
+Enable=Gateway,Socket,Source,Sink,Media,Control,Headset
+AutoConnect=true
+
+[Headset]
+HFP=true
+MaxConnected=1
+
+[A2DP]
+SBCSources=1
+MPEG12Sources=0
+
+* alsa
+
+Create /etc/asound.conf with the following contents (use bt address of your
+a2dp device):
+
+pcm.!default {
+    type pulse
+}
+
+ctl.!default {
+    type pulse
+}
+
+pcm.bt {
+    type bluetooth
+    device 00:11:67:00:05:CE
+    profile hifi
+}
+
+==== Start software
+
+Open three consoles on the system and run all involved pieces of software in
+foreground mode in order to monitor debug output:
+
+    host-1# blutoothd -d -n
+
+    host-2# pulseaudio -vvv
+
+==== A2DP demo
+
+Scan bluetooth devices and found your a2dp speakers:
+    host-3# hcitool scan
+    Scanning ...
+        00:11:67:00:05:CE   BLUETUBE
+
+Pair with your a2dp speakers:
+    host-3# ./simple-agent hci0 00:11:67:00:05:CE
+    RequestPinCode (/org/bluez/4974/hci0/dev_00_11_67_00_05_CE)
+    Enter PIN Code: 0000
+    Release
+    New device (/org/bluez/4974/hci0/dev_00_11_67_00_05_CE)
+
+Create pulseaudio sink for bluetooth audio device:
+    host-3# pactl load-module module-alsa-sink device=bt
+
+    host-3# pactl list sinks short
+    0   alsa_output.usb-Logitech_Logitech_USB_Headset-00-Headset.analog-stereo module-alsa-card.c  s16le 2ch 44100Hz   SUSPENDED
+    1   bluez_sink.00_11_67_00_05_CE    module-bluetooth-device.c   s16le 2ch 44100Hz SUSPENDED
+
+    host-3# pactl set-default-sink 1
+
+Play music:
+    host-3# aplay -D pulse test.wav
+    host-3# mpg123 test.mp3
+
+/* vim: set filetype=esys : */
