@@ -7,10 +7,10 @@ endif
 
 syn keyword esysTodo 		TODO FIXME XXX NOTE
 
-syn match esysSection		'^====.*$'
+syn match esysSection		'^=.*$'
 syn match esysSubSection	'^*.*$'
-syn match esysHostShell		'\s*dev#.*$'
-syn match esysDeviceShell	'\s*host#.*$'
+syn match esysHostShell		'\s*dev.*#.*$'
+syn match esysDeviceShell	'\s*host.*#.*$'
 
 syn match esysToolShell		'^\s*GDB>.*$'
 syn match esysToolShell		'^\s*UBoot>.*$'
